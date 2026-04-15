@@ -1,6 +1,7 @@
 import type { BehaviorConfig, BetterHtmxContext, HttpMethod, ResponseKind } from "../types.js";
 
 type WsLike = {
+  readyState: number;
   send(data: string): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: "open" | "message" | "error" | "close", listener: (ev: any) => void): void;
@@ -8,6 +9,9 @@ type WsLike = {
     type: "open" | "message" | "error" | "close",
     listener: (ev: any) => void
   ): void;
+  // Node `ws` compatibility (EventEmitter style)
+  on?: (type: "open" | "message" | "error" | "close", listener: (ev: any) => void) => void;
+  off?: (type: "open" | "message" | "error" | "close", listener: (ev: any) => void) => void;
 };
 
 type WsRequestMessage = {
@@ -33,6 +37,51 @@ function randomId(): string {
 
 function isBrowserWebSocketAvailable(): boolean {
   return typeof WebSocket !== "undefined";
+}
+
+function wsAddListener(
+  ws: WsLike,
+  type: "open" | "message" | "error" | "close",
+  listener: (ev: any) => void
+) {
+  if (typeof ws.addEventListener === "function") ws.addEventListener(type, listener);
+  else ws.on?.(type, listener);
+}
+
+function wsRemoveListener(
+  ws: WsLike,
+  type: "open" | "message" | "error" | "close",
+  listener: (ev: any) => void
+) {
+  if (typeof ws.removeEventListener === "function") ws.removeEventListener(type, listener);
+  else ws.off?.(type, listener);
+}
+
+async function waitForOpen(ws: WsLike, signal?: AbortSignal): Promise<void> {
+  // WebSocket readyState: 0 CONNECTING, 1 OPEN, 2 CLOSING, 3 CLOSED
+  if (ws.readyState === 1) return;
+  if (ws.readyState !== 0) {
+    throw new DOMException("WebSocket not open", "InvalidStateError");
+  }
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+
+  await new Promise<void>((resolve, reject) => {
+    const onOpen = () => cleanup(resolve);
+    const onError = () =>
+      cleanup(() => reject(new DOMException("WebSocket error", "InvalidStateError")));
+    const onAbort = () => cleanup(() => reject(new DOMException("Aborted", "AbortError")));
+
+    const cleanup = (done: () => void) => {
+      wsRemoveListener(ws, "open", onOpen);
+      wsRemoveListener(ws, "error", onError);
+      signal?.removeEventListener("abort", onAbort);
+      done();
+    };
+
+    wsAddListener(ws, "open", onOpen);
+    wsAddListener(ws, "error", onError);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 async function createWs(url: string): Promise<WsLike> {
@@ -81,7 +130,7 @@ async function getConnection(url: string) {
         resolve(msg);
       };
 
-      ws.addEventListener("message", onMessage);
+      wsAddListener(ws, "message", onMessage);
       return { ws, pending };
     })();
     connections.set(url, p);
@@ -166,6 +215,7 @@ export async function doWsRequest(
     opts.controller?.signal.addEventListener("abort", onAbort, { once: true });
   });
 
+  await waitForOpen(ws, opts.controller?.signal);
   ws.send(JSON.stringify(reqMsg));
 
   const resMsg = await p;

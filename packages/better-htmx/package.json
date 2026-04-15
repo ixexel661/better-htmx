@@ -1,6 +1,6 @@
 {
   "name": "better-htmx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "BetterHTMX — lightweight HTML-over-the-wire interactions, inspired by HTMX, standalone.",
   "type": "module",
   "license": "MIT",

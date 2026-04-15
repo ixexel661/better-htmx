@@ -8,6 +8,6 @@
   },
   "scripts": {
     "dev": "node server.mjs",
-    "build": "pnpm -C ../better-htmx build"
+    "build": "echo \"example: nothing to build\""
   }
 }
