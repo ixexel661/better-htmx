@@ -12,7 +12,7 @@ BetterHTMX is a **small, dependency-free** TypeScript library for **HTML over th
 ## Installation
 
 ```bash
-pnpm add betterhtmx
+pnpm add better-htmx
 ```
 
 ## Quickstart
