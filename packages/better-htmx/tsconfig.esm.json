@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".tmp/esm",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  }
+}

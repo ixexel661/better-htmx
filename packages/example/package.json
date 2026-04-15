@@ -1,0 +1,13 @@
+{
+  "name": "better-htmx-example",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "better-htmx": "workspace:*",
+    "ws": "^8.20.0"
+  },
+  "scripts": {
+    "dev": "node server.mjs",
+    "build": "pnpm -C ../better-htmx build"
+  }
+}

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BetterHTMX – Demo</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 2rem;
+        line-height: 1.4;
+      }
+      .row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 0.6rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+      }
+      .box {
+        padding: 1rem;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        background: #fafafa;
+      }
+      .bx-loading {
+        opacity: 0.6;
+        filter: grayscale(0.2);
+      }
+      code {
+        background: #f2f2f2;
+        padding: 0.1rem 0.3rem;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BetterHTMX – Demo</h1>
+
+    <div class="box">
+      <h2>1) Direkt mit <code>bx-*</code></h2>
+      <div class="row">
+        <button type="button" bx-post="/api/save" bx-target="#result" bx-swap="innerHTML">Save</button>
+        <div id="result">…</div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top: 1rem">
+      <h2>2) Behavior via <code>use</code></h2>
+      <div class="row">
+        <button type="button" use="saveButton">Save (use)</button>
+        <div id="result2">…</div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top: 1rem">
+      <h2>2b) Behavior via WebSocket (<code>ws</code>)</h2>
+      <div class="row">
+        <button type="button" use="saveButtonWs">Save (ws)</button>
+        <div id="resultWs">…</div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top: 1rem">
+      <h2>3) Component via <code>component()</code> + <code>props</code></h2>
+      <div class="row">
+        <div class="box" style="background: #fff" use="UserCard" props='{"id":1}'> (lädt …) </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { betterHtmx } from "/betterhtmx/index.js";
+
+      betterHtmx.configure({ debug: true });
+
+      betterHtmx.define("saveButton", {
+        post: "/api/save",
+        target: "#result2",
+        swap: "innerHTML"
+      });
+
+      betterHtmx.define("saveButtonWs", {
+        transport: "ws",
+        wsUrl: `ws://${location.host}/ws`,
+        post: "/api/save",
+        target: "#resultWs",
+        swap: "innerHTML"
+      });
+
+      betterHtmx.component("UserCard", (props) => ({
+        get: `/api/users/${props.id}`,
+        target: "self",
+        swap: "outerHTML"
+      }));
+    </script>
+  </body>
+</html>
+
